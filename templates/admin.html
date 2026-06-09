@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Importar Dados · SEDUC{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div>
+        <span class="badge">Admin · ETL</span>
+        <h1>Importação de Dados</h1>
+        <p>Importe as planilhas de <strong>Expedientes</strong> e de <strong>Execução Orçamentária</strong> para alimentar o sistema.</p>
+    </div>
+</section>
+
+<!-- ── Upload Expedientes ─────────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:24px;" class="admin-grid">
+
+<div>
+    <h2 style="font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--gray-900);
+               text-transform:uppercase;letter-spacing:1.2px;margin:0 0 12px;border-bottom:3px solid var(--gesp-red);
+               display:inline-block;padding-bottom:5px;">
+        1 · Expedientes de Alteração Orçamentária
+    </h2>
+    <p style="font-size:13px;color:var(--color-text-mute);margin:0 0 12px;">
+        Planilha: <code>Expedientes Consolidados – Reduções e Suplementações.xlsx</code><br>
+        Alimenta o <strong>Jornal do Dia</strong> e o <strong>Painel Gerencial</strong>.
+    </p>
+
+    <div class="upload-zone" id="dz-exp">
+        <h2>📥 Expedientes (.xlsx)</h2>
+        <p>Arraste ou clique para selecionar</p>
+        <p>
+            <button class="btn btn--primary" id="btn-pick-exp">Escolher arquivo</button>
+            <input type="file" id="file-exp" accept=".xlsx,.xlsm" hidden />
+        </p>
+        <p id="status-exp" style="font-size:13px;"></p>
+    </div>
+    <div id="result-exp" class="upload-result" hidden></div>
+</div>
+
+<!-- ── Upload Execução ──────────────────────────────────────────── -->
+<div>
+    <h2 style="font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--gray-900);
+               text-transform:uppercase;letter-spacing:1.2px;margin:0 0 12px;border-bottom:3px solid #2563EB;
+               display:inline-block;padding-bottom:5px;">
+        2 · Planejado Consolidado (Execução Orçamentária)
+    </h2>
+    <p style="font-size:13px;color:var(--color-text-mute);margin:0 0 12px;">
+        Planilha: <code>YYYYMMDD_PLANEJADO_CONSOLIDADO.xlsx</code><br>
+        Alimenta a aba de <strong>Execução Orçamentária</strong> com dotação, empenhado, liquidado e saldos.
+    </p>
+
+    <div class="upload-zone" id="dz-exec" style="border-color:#2563EB;">
+        <h2>📊 Execução (.xlsx)</h2>
+        <p>Arraste ou clique para selecionar</p>
+        <p>
+            <button class="btn btn--primary" id="btn-pick-exec" style="background:#2563EB;">Escolher arquivo</button>
+            <input type="file" id="file-exec" accept=".xlsx,.xlsm" hidden />
+        </p>
+        <p id="status-exec" style="font-size:13px;"></p>
+    </div>
+    <div id="result-exec" class="upload-result" style="border-left-color:#2563EB;" hidden></div>
+</div>
+
+<!-- ── Upload Necessidade ───────────────────────────────────────── -->
+<div>
+    <h2 style="font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--gray-900);
+               text-transform:uppercase;letter-spacing:1.2px;margin:0 0 12px;border-bottom:3px solid var(--gesp-green);
+               display:inline-block;padding-bottom:5px;">
+        3 · Necessidade Atualizada (por UGE)
+    </h2>
+    <p style="font-size:13px;color:var(--color-text-mute);margin:0 0 12px;">
+        Planilha de <code>NECESSIDADE</code> por unidade gestora e assunto planejado.<br>
+        Alimenta a aba de <strong>Pressão Orçamentária</strong> (necessidade × dotação).
+    </p>
+
+    <div class="upload-zone" id="dz-nec" style="border-color:var(--gesp-green);">
+        <h2>📈 Necessidade (.xlsx)</h2>
+        <p>Arraste ou clique para selecionar</p>
+        <p>
+            <button class="btn btn--primary" id="btn-pick-nec" style="background:var(--gesp-green);">Escolher arquivo</button>
+            <input type="file" id="file-nec" accept=".xlsx,.xlsm" hidden />
+        </p>
+        <p id="status-nec" style="font-size:13px;"></p>
+    </div>
+    <div id="result-nec" class="upload-result" style="border-left-color:var(--gesp-green);" hidden></div>
+</div>
+
+</div><!-- /admin-grid -->
+
+<section class="chart-card">
+    <h3>Dicas de uso</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:12px;">
+        <ul style="margin:0;padding-left:20px;line-height:1.7;font-size:13.5px;">
+            <li><strong>Planilha 1 — Expedientes:</strong> o sistema lê a primeira aba. A linha 1 é ignorada (totais); o cabeçalho está na linha 2.</li>
+            <li>Colunas esperadas: <em>TIPO, Expediente, Envio, Conclusão, ASSUNTO, UO, PROG, AÇÃO, GRUPO, ELEMENTO, FONTE, REDUÇÃO, SUPLEMENTAÇÃO, DESCRIÇÃO, Valor minutado, JAN–DEZ.</em></li>
+            <li>O status é calculado automaticamente: <em>Realizada / Em Andamento / Em Elaboração</em>.</li>
+        </ul>
+        <ul style="margin:0;padding-left:20px;line-height:1.7;font-size:13.5px;">
+            <li><strong>Planilha 2 — Execução:</strong> a linha 1 é o cabeçalho. Cada linha orçamentária aparece 5× com TABELA = 10 DOTAÇÃO / 30 EMPENHADO / 35 A EMPENHAR / 40 LIQUIDADO / 45 A LIQUIDAR.</li>
+            <li>Após o upload visite <a href="/execucao">Execução Orçamentária</a> para ver o relatório completo.</li>
+            <li>Ambas as importações <strong>substituem</strong> os dados anteriores do mesmo tipo.</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setupUpload({ dzId, fileId, btnId, statusId, resultId, endpoint, renderResult }) {
+    const dz  = document.getElementById(dzId);
+    const fi  = document.getElementById(fileId);
+    const st  = document.getElementById(statusId);
+    const res = document.getElementById(resultId);
+
+    document.getElementById(btnId).addEventListener('click', () => fi.click());
+
+    ['dragenter','dragover'].forEach(ev =>
+        dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('is-drag'); }));
+    ['dragleave','drop'].forEach(ev =>
+        dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('is-drag'); }));
+
+    dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) send(f); });
+    fi.addEventListener('change', e => { const f = e.target.files[0]; if (f) send(f); });
+
+    async function send(file) {
+        st.textContent = 'Enviando ' + file.name + '…';
+        st.style.color = '';
+        res.hidden = true;
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const r = await fetch(endpoint, { method: 'POST', body: fd });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+            st.textContent = 'Importação concluída com sucesso!';
+            res.hidden = false;
+            res.innerHTML = renderResult(data);
+        } catch (err) {
+            st.textContent = 'Erro: ' + err.message;
+            st.style.color = 'var(--gesp-red)';
+        }
+    }
+}
+
+setupUpload({
+    dzId: 'dz-exp', fileId: 'file-exp', btnId: 'btn-pick-exp',
+    statusId: 'status-exp', resultId: 'result-exp',
+    endpoint: '/api/importar',
+    renderResult: d => `
+        <strong>${d.arquivo}</strong> — ${d.linhas_importadas} linha(s) processadas.<br>
+        Período: <b>${d.periodo?.de || '?'}</b> a <b>${d.periodo?.ate || '?'}</b><br>
+        Suplementação total: <b>${moedaCompleta(d.total_suplementacao)}</b><br>
+        Redução total: <b>${moedaCompleta(d.total_reducao)}</b><br>
+        <a href="/">→ Abrir Jornal do Dia</a> &nbsp;·&nbsp; <a href="/painel">→ Painel Gerencial</a>
+    `
+});
+
+setupUpload({
+    dzId: 'dz-exec', fileId: 'file-exec', btnId: 'btn-pick-exec',
+    statusId: 'status-exec', resultId: 'result-exec',
+    endpoint: '/api/importar-execucao',
+    renderResult: d => `
+        <strong>${d.arquivo}</strong> — ${d.linhas_importadas} linha(s) processadas.<br>
+        Dotação total (10): <b>${moedaCompleta(d.total_dotacao)}</b><br>
+        Empenhado total (30): <b>${moedaCompleta(d.total_empenhado)}</b><br>
+        <a href="/execucao">→ Ver Execução Orçamentária</a>
+    `
+});
+
+setupUpload({
+    dzId: 'dz-nec', fileId: 'file-nec', btnId: 'btn-pick-nec',
+    statusId: 'status-nec', resultId: 'result-nec',
+    endpoint: '/api/importar-necessidade',
+    renderResult: d => {
+        const naoMap = (d.colunas_nao_encontradas || []);
+        const aviso = naoMap.length
+            ? `<br><span style="color:var(--gesp-red)">⚠ Colunas não encontradas: ${naoMap.join(', ')} — ajuste o COLMAP no ETL.</span>`
+            : '';
+        return `
+        <strong>${d.arquivo}</strong> — ${d.linhas_importadas} linha(s) processadas.<br>
+        Necessidade total: <b>${moedaCompleta(d.total_necessidade)}</b>${aviso}<br>
+        <a href="/pressao">→ Ver Pressão Orçamentária</a>`;
+    }
+});
+</script>
+{% endblock %}

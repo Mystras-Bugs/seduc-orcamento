@@ -1,0 +1,17 @@
+# Blueprint do Render — publica o sistema FastAPI da SEDUC.
+# Basta conectar este repositório no Render (New + → Blueprint) que ele
+# lê este arquivo e cria o serviço web automaticamente.
+services:
+  - type: web
+    name: seduc-orcamento
+    runtime: python
+    plan: free
+    # Instala as dependências do backend
+    buildCommand: "pip install -r backend/requirements.txt"
+    # Sobe o servidor ASGI ouvindo na porta que o Render injeta em $PORT
+    startCommand: "uvicorn backend.app:app --host 0.0.0.0 --port $PORT"
+    autoDeploy: true
+    envVars:
+      # pandas/reportlab/openpyxl têm wheels prontos para 3.12 (evita compilar)
+      - key: PYTHON_VERSION
+        value: "3.12.6"

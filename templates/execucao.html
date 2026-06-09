@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Execução Orçamentária · SEDUC{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div>
+        <span class="badge">Execução · Relatório Analítico</span>
+        <h1>Execução Orçamentária</h1>
+        <p>Dotação atual, empenhado, a empenhar, liquidado e a liquidar — por estrutura orçamentária e assunto/despesa.</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn--ghost" id="btn-reset-exec">Limpar filtros</button>
+        <button class="btn btn--primary" id="btn-aplicar-exec">Aplicar filtros</button>
+    </div>
+</section>
+
+<!-- ── Filtros ─────────────────────────────────────────────────────── -->
+<section class="filters">
+    <div class="filters-header">
+        <h3>Filtros</h3>
+        <small id="exec-filtro-resumo" style="color:var(--color-text-mute)"></small>
+    </div>
+    <div class="filters-grid">
+        <div class="field"><label>Unidade Orçamentária</label>
+            <select id="ef-uo"><option value="">Todas</option></select></div>
+        <div class="field"><label>Programa</label>
+            <select id="ef-programa"><option value="">Todos</option></select></div>
+        <div class="field"><label>Ação</label>
+            <select id="ef-acao"><option value="">Todas</option></select></div>
+        <div class="field"><label>Grupo de Despesa</label>
+            <select id="ef-grupo"><option value="">Todos</option></select></div>
+        <div class="field"><label>Elemento</label>
+            <select id="ef-elemento"><option value="">Todos</option></select></div>
+        <div class="field"><label>Fonte de Recursos</label>
+            <select id="ef-fonte"><option value="">Todas</option></select></div>
+        <div class="field"><label>Classificação</label>
+            <select id="ef-classificacao"><option value="">Todas</option></select></div>
+        <div class="field"><label>Assunto contém</label>
+            <input type="text" id="ef-assunto" placeholder="ex.: uniforme" /></div>
+    </div>
+</section>
+
+<!-- ── KPIs de Execução ───────────────────────────────────────────── -->
+<section class="kpi-grid">
+    <div class="kpi kpi--blue">
+        <div class="kpi__label">Dotação Atual</div>
+        <div class="kpi__value" id="ekpi-dotacao">—</div>
+        <div class="kpi__sub">Total autorizado</div>
+    </div>
+    <div class="kpi kpi--yellow">
+        <div class="kpi__label">Empenhado</div>
+        <div class="kpi__value" id="ekpi-empenhado">—</div>
+        <div class="kpi__sub" id="ekpi-emp-pct">—% da dotação</div>
+    </div>
+    <div class="kpi kpi--green">
+        <div class="kpi__label">Liquidado</div>
+        <div class="kpi__value" id="ekpi-liquidado">—</div>
+        <div class="kpi__sub" id="ekpi-liq-pct">—% do empenhado</div>
+    </div>
+    <div class="kpi kpi--red">
+        <div class="kpi__label">A Empenhar</div>
+        <div class="kpi__value" id="ekpi-aempenhar">—</div>
+        <div class="kpi__sub">Saldo disponível</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__label">A Liquidar</div>
+        <div class="kpi__value" id="ekpi-aliquidar">—</div>
+        <div class="kpi__sub">Empenhado não liquidado</div>
+    </div>
+</section>
+
+<!-- ── Gráficos ───────────────────────────────────────────────────── -->
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Execução por UO — Dotação vs. Empenhado vs. Liquidado</h3>
+        <div class="canvas-wrap"><canvas id="exec-chart-uo"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Proporção de Execução</h3>
+        <div class="canvas-wrap"><canvas id="exec-chart-donut"></canvas></div>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Distribuição Mensal — A Empenhar por Mês</h3>
+        <div class="canvas-wrap"><canvas id="exec-chart-mensal"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Top 10 Assuntos por Dotação</h3>
+        <div class="canvas-wrap"><canvas id="exec-chart-assunto"></canvas></div>
+    </div>
+</section>
+
+<!-- ── Tabela ─────────────────────────────────────────────────────── -->
+<section class="table-card">
+    <div class="table-toolbar">
+        <div>
+            <h3>Relatório Detalhado de Execução</h3>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+                <button class="btn btn--ghost btn--sm active" id="view-assunto" onclick="setView('assunto',this)">Por Assunto</button>
+                <button class="btn btn--ghost btn--sm" id="view-uo" onclick="setView('uo',this)">Por UO</button>
+                <button class="btn btn--ghost btn--sm" id="view-programa" onclick="setView('programa',this)">Por Programa/Ação</button>
+                <button class="btn btn--ghost btn--sm" id="view-elemento" onclick="setView('elemento',this)">Por Elemento</button>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn--ghost" id="btn-exec-csv">Exportar CSV</button>
+            <button class="btn btn--yellow" id="btn-exec-pdf">Exportar PDF</button>
+        </div>
+    </div>
+
+    <div class="exec-legend" style="margin:12px 0 6px;display:flex;gap:12px;font-size:12px;flex-wrap:wrap;">
+        <span><span class="legend-dot" style="background:var(--gesp-blue)"></span> Dotação</span>
+        <span><span class="legend-dot" style="background:var(--gesp-yellow)"></span> Empenhado</span>
+        <span><span class="legend-dot" style="background:var(--gesp-green)"></span> Liquidado</span>
+        <span><span class="legend-dot" style="background:var(--gesp-sky-mid)"></span> A Liquidar</span>
+        <span><span class="legend-dot" style="background:var(--gesp-blue)"></span> A Empenhar</span>
+        <span><span class="legend-dot" style="background:var(--gesp-red);opacity:.3"></span> Déficit</span>
+    </div>
+
+    <div class="table-wrap">
+        <table class="execucao-table" id="exec-table">
+            <thead id="exec-thead">
+                <tr>
+                    <th>UO</th>
+                    <th>Assunto / Despesa</th>
+                    <th>Grupo</th>
+                    <th class="num">Dotação</th>
+                    <th class="num">Empenhado</th>
+                    <th class="num">A Empenhar</th>
+                    <th class="num">Liquidado</th>
+                    <th class="num">A Liquidar</th>
+                    <th>Situação</th>
+                    <th style="width:100px;text-align:center">Execução %</th>
+                </tr>
+            </thead>
+            <tbody id="exec-tbody">
+                <tr><td colspan="10" class="empty">Carregando…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin:10px 4px 0; font-size:12px; color:var(--color-text-mute);">
+        Linhas em vermelho indicam <strong>déficit orçamentário</strong> (A Empenhar &lt; 0).
+        Percentual de execução = Empenhado ÷ Dotação.
+    </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/execucao.js"></script>
+{% endblock %}

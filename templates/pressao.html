@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Pressão Orçamentária · SEDUC{% endblock %}
+
+{% block head %}
+<style>
+    /* Painel de insights — cartões coloridos por severidade (espelha inteligência) */
+    .insights-grid {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px; margin-bottom: 28px;
+    }
+    @media (max-width: 900px) { .insights-grid { grid-template-columns: 1fr; } }
+    .insight-card {
+        background: var(--color-surface); border-radius: var(--r-lg);
+        padding: 16px 18px; box-shadow: var(--shadow-sm);
+        border-left: 5px solid var(--gray-400);
+    }
+    .insight-card.critico { border-left-color: var(--gesp-red); background: rgba(255,22,31,0.05); }
+    .insight-card.alerta  { border-left-color: var(--gesp-yellow); background: rgba(251,185,0,0.07); }
+    .insight-card.info    { border-left-color: var(--gesp-blue); }
+    .insight-card.ok      { border-left-color: var(--gesp-green); }
+    .insight-card__head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .insight-card__sev {
+        font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;
+        padding: 2px 8px; border-radius: 999px; background: var(--gray-100); color: var(--gray-700);
+    }
+    .insight-card.critico .insight-card__sev { background: rgba(255,22,31,0.15); color: var(--gesp-red); }
+    .insight-card.alerta  .insight-card__sev { background: rgba(251,185,0,0.20); color: #92400e; }
+    .insight-card.info    .insight-card__sev { background: rgba(3,78,162,0.12); color: var(--gesp-blue); }
+    .insight-card.ok      .insight-card__sev { background: rgba(11,146,71,0.14); color: var(--gesp-green); }
+    .insight-card__titulo { font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--gray-900); }
+    .insight-card__texto { font-size: 13px; line-height: 1.5; color: var(--color-text); }
+
+    /* pills extra de situação */
+    .pill.def  { background: #7a0010; color: var(--gesp-white); }
+    .pill.folga { background: rgba(11,146,71,0.16); color: var(--gesp-green); }
+    .execucao-table tbody tr.folga { background: rgba(11,146,71,0.06); }
+    .execucao-table tbody tr.folga:hover { background: rgba(11,146,71,0.12); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div>
+        <span class="badge">Necessidade × Dotação</span>
+        <h1>Pressão Orçamentária Atualizada</h1>
+        <p>Acompanhe a necessidade atualizada do órgão frente à dotação atual, por unidade
+           gestora e assunto planejado, e projete a pressão dotacional descoberta.</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn--ghost" id="btn-reset-press">Limpar filtros</button>
+        <button class="btn btn--primary" id="btn-aplicar-press">Aplicar filtros</button>
+    </div>
+</section>
+
+<!-- ── Filtros ─────────────────────────────────────────────────────── -->
+<section class="filters">
+    <div class="filters-header">
+        <h3>Filtros</h3>
+        <small id="press-filtro-resumo" style="color:var(--color-text-mute)"></small>
+    </div>
+    <div class="filters-grid">
+        <div class="field"><label>Unidade Gestora (UGE)</label>
+            <select id="pf-uge"><option value="">Todas</option></select></div>
+        <div class="field"><label>Unidade Orçamentária</label>
+            <select id="pf-uo"><option value="">Todas</option></select></div>
+        <div class="field"><label>Programa</label>
+            <select id="pf-programa"><option value="">Todos</option></select></div>
+        <div class="field"><label>Ação</label>
+            <select id="pf-acao"><option value="">Todas</option></select></div>
+        <div class="field"><label>Grupo de Despesa</label>
+            <select id="pf-grupo"><option value="">Todos</option></select></div>
+        <div class="field"><label>Elemento</label>
+            <select id="pf-elemento"><option value="">Todos</option></select></div>
+        <div class="field"><label>Fonte de Recursos</label>
+            <select id="pf-fonte"><option value="">Todas</option></select></div>
+        <div class="field"><label>Classificação</label>
+            <select id="pf-classificacao"><option value="">Todas</option></select></div>
+        <div class="field"><label>Assunto contém</label>
+            <input type="text" id="pf-assunto" placeholder="ex.: merenda" /></div>
+    </div>
+</section>
+
+<!-- ── KPIs ───────────────────────────────────────────────────────── -->
+<section class="kpi-grid">
+    <div class="kpi kpi--blue" title="Soma da necessidade atualizada informada pelo órgão nos filtros aplicados.">
+        <div class="kpi__label">Necessidade Total</div>
+        <div class="kpi__value" id="pkpi-necessidade">—</div>
+        <div class="kpi__sub">Necessidade atualizada</div>
+    </div>
+    <div class="kpi kpi--blue" title="Dotação Atual = saldo atualmente destinado/recebido para as despesas (teto disponível). Total da tabela 10.">
+        <div class="kpi__label">Dotação Atual</div>
+        <div class="kpi__value" id="pkpi-dotacao">—</div>
+        <div class="kpi__sub">Total da tabela 10</div>
+    </div>
+    <div class="kpi kpi--red" title="Pressão Total = Σ max(0, Necessidade − Dotação) por linha. Necessidade que ainda não tem teto.">
+        <div class="kpi__label">Pressão Total</div>
+        <div class="kpi__value" id="pkpi-pressao">—</div>
+        <div class="kpi__sub">Σ necessidade não coberta</div>
+    </div>
+    <div class="kpi kpi--red" title="Déficit Dotacional = Necessidade Total − Dotação Atual (líquido, pode ser negativo se há folga).">
+        <div class="kpi__label">Déficit Dotacional</div>
+        <div class="kpi__value" id="pkpi-deficit">—</div>
+        <div class="kpi__sub">Necessidade − Dotação</div>
+    </div>
+    <div class="kpi kpi--yellow" title="Cobertura Média = Dotação Atual ÷ Necessidade Total. Quanto da necessidade já tem teto disponível.">
+        <div class="kpi__label">Cobertura Média</div>
+        <div class="kpi__value" id="pkpi-cobertura">—</div>
+        <div class="kpi__sub">Dotação ÷ Necessidade</div>
+    </div>
+    <div class="kpi kpi--yellow" title="Linhas com Necessidade > Dotação Atual (em pressão). Subtexto: linhas com Dotação > Necessidade (em folga).">
+        <div class="kpi__label">Linhas em Pressão</div>
+        <div class="kpi__value" id="pkpi-npressao">—</div>
+        <div class="kpi__sub" id="pkpi-nfolga">— linhas em folga</div>
+    </div>
+</section>
+
+<!-- ── Painel de Insights ─────────────────────────────────────────── -->
+<section style="margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+    <h3 style="margin:0;font-family:var(--font-display);font-size:14px;font-weight:800;
+        color:var(--gray-900);text-transform:uppercase;letter-spacing:1.4px;
+        border-bottom:3px solid var(--gesp-red);padding-bottom:6px;">Painel de Insights</h3>
+</section>
+<div class="insights-grid" id="insights-cards">
+    <div class="insight-card"><div class="insight-card__texto">Carregando análise…</div></div>
+</div>
+
+<!-- ── Gráficos ───────────────────────────────────────────────────── -->
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Necessidade vs. Dotação por UGE</h3>
+        <div class="canvas-wrap"><canvas id="press-chart-uge"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Cobertura % por UGE</h3>
+        <div class="canvas-wrap"><canvas id="press-chart-cobertura"></canvas></div>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Pressão por Assunto (Top descobertos)</h3>
+        <div class="canvas-wrap"><canvas id="press-chart-pressao"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Necessidade vs. Dotação por Dimensão</h3>
+        <div style="margin:-4px 0 10px;">
+            <select id="press-dim" class="btn btn--ghost btn--sm" style="padding:5px 10px;">
+                <option value="grupo">Por Grupo</option>
+                <option value="fonte">Por Fonte</option>
+                <option value="programa">Por Programa</option>
+                <option value="classificacao">Por Classificação</option>
+            </select>
+        </div>
+        <div class="canvas-wrap"><canvas id="press-chart-dim"></canvas></div>
+    </div>
+</section>
+
+<!-- ── Tabela ─────────────────────────────────────────────────────── -->
+<section class="table-card">
+    <div class="table-toolbar">
+        <h3>Necessidade vs. Dotação por Linha</h3>
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn--ghost" id="btn-press-csv">Exportar CSV</button>
+            <button class="btn btn--yellow" id="btn-press-pdf">Exportar PDF</button>
+        </div>
+    </div>
+
+    <div class="exec-legend" style="margin:6px 0 6px;display:flex;gap:12px;font-size:12px;flex-wrap:wrap;">
+        <span><span class="legend-dot" style="background:#7a0010"></span> Déficit (pressão + saldo esgotado)</span>
+        <span><span class="legend-dot" style="background:var(--gesp-red)"></span> Pressão (necessidade &gt; dotação)</span>
+        <span><span class="legend-dot" style="background:var(--gray-400)"></span> Equilíbrio</span>
+        <span><span class="legend-dot" style="background:var(--gesp-green)"></span> Folga (dotação &gt; necessidade)</span>
+    </div>
+
+    <div class="table-wrap">
+        <table class="execucao-table" id="press-table">
+            <thead>
+                <tr>
+                    <th title="Unidade Gestora — quem detém e executa o recurso da despesa.">UGE</th>
+                    <th title="Despesa / Assunto Planejado e sua estrutura orçamentária.">Assunto / Despesa</th>
+                    <th title="Estrutura orçamentária: Programa · Ação · Grupo de despesa.">Estrutura</th>
+                    <th class="num" title="Necessidade Atualizada informada pelo órgão para a despesa.">Necessidade Atualizada</th>
+                    <th class="num" title="Dotação Atual = saldo atualmente destinado/recebido para a despesa (teto disponível). Total da tabela 10.">Dotação Atual</th>
+                    <th class="num" title="Pressão = Necessidade Atualizada − Dotação Atual. Positivo = falta teto para a despesa.">Pressão</th>
+                    <th style="width:110px;text-align:center" title="Cobertura = Dotação Atual ÷ Necessidade. ≥100% verde, 70–99% amarelo, <70% vermelho.">Cobertura %</th>
+                    <th class="num" title="Empenhado = recurso já destinado/reservado a um fornecedor (CNPJ/CPF), a liquidar posteriormente.">Empenhado</th>
+                    <th class="num" title="A Empenhar = Dotação − Empenhado. O que ainda resta para gerar novos empenhos. Negativo = déficit.">A Empenhar</th>
+                    <th class="num" title="A Liquidar = Empenhado − Liquidado. Valor empenhado ainda não pago, mas reservado para pagamentos futuros.">A Liquidar</th>
+                    <th title="DÉFICIT: pressão + saldo a empenhar negativo · PRESSÃO: necessidade > dotação · EQUILÍBRIO · FOLGA: dotação > necessidade.">Situação</th>
+                </tr>
+            </thead>
+            <tbody id="press-tbody">
+                <tr><td colspan="11" class="empty">Carregando…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin:10px 4px 0; font-size:12px; color:var(--color-text-mute);">
+        Pressão = Necessidade Atualizada − Dotação Atual. Cobertura = Dotação ÷ Necessidade.
+        Linhas em <strong>déficit/pressão</strong> em vermelho; <strong>folga</strong> em verde.
+        Importe a planilha de necessidade em <a href="/admin">Importar Dados</a>.
+    </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pressao.js"></script>
+{% endblock %}

@@ -1,0 +1,103 @@
+/* =========================================================================
+   IDENTIDADE VISUAL - GOVERNO DO ESTADO DE SAO PAULO (GESP)
+   Referencia: Manual de Identidade Visual v1.12 - JUN 2023
+   ========================================================================= */
+
+:root {
+    /* =====================================================================
+       PALETA 2D PROFISSIONAL — núcleo BRANCO / PRETO / CINZA / VERMELHO,
+       com 3 tons de apoio dessaturados e harmônicos entre si.
+       O vermelho é reservado a acento, alerta e déficit.
+       ===================================================================== */
+
+    /* NÚCLEO */
+    --gesp-red:        #C8101A;   /* acento / alerta / déficit (sóbrio)   */
+    --gesp-red-dark:   #A10009;
+    --gesp-red-soft:   #FBE3E4;   /* fundo discreto de déficit            */
+    --gesp-white:      #FFFFFF;
+    --gesp-black:      #15181F;
+
+    /* TONS DE APOIO (dessaturados, harmônicos) */
+    --support-slate:   #3E5C76;   /* azul-ardósia  (séries / info)        */
+    --support-slate-d: #2A3F52;
+    --support-slate-l: #6B8299;
+    --support-sage:    #5B7B6F;   /* verde-sálvia  (positivo)             */
+    --support-gold:    #B08A3E;   /* ocre suave    (atenção)              */
+
+    /* Aliases de compatibilidade (mantêm nomes usados no código) */
+    --gesp-yellow:     #B08A3E;
+    --gesp-yellow-dk:  #8A6B2E;
+    --gesp-blue:       #3E5C76;
+    --gesp-blue-light: #6B8299;
+    --gesp-blue-dark:  #2A3F52;
+    --gesp-sky-pale:   #C3D0DA;
+    --gesp-sky:        #9DB4C4;
+    --gesp-sky-mid:    #6B8299;
+    --gesp-blue-deep:  #2A3F52;
+    --gesp-blue-night: #2A3F52;
+    --gesp-olive:      #8A9A6B;
+    --gesp-wine:       #7A3B33;
+    --gesp-green:      #5B7B6F;
+
+    /* CINZAS (neutros, levemente quentes para fundo de papel) */
+    --gray-50:  #F7F8FA;
+    --gray-100: #EDEFF3;
+    --gray-200: #DDE1E8;
+    --gray-300: #C3C8D2;
+    --gray-400: #9AA1AE;
+    --gray-500: #6B7280;
+    --gray-600: #4E5663;
+    --gray-700: #2E3440;
+    --gray-800: #1B1F27;
+    --gray-900: #15181F;
+
+    /* SEMANTICA */
+    --color-bg:        #F4F5F7;
+    --color-surface:   #FFFFFF;
+    --color-text:      #1B1F27;
+    --color-text-mute: #5B636F;
+    --color-border:    #E4E7EC;
+    --color-positive:  #3F6B52;
+    --color-negative:  #C8101A;
+    --color-warning:   #B08A3E;
+    --color-info:      #3E5C76;
+
+    /* TIPOGRAFIA - Montserrat (secundaria do manual) como principal web,
+       Verdana como tipografia de sistema (fallback obrigatorio do manual).  */
+    --font-display: "Montserrat", "Futura PT", "Helvetica Neue", Arial, sans-serif;
+    --font-body:    "Montserrat", Verdana, "Segoe UI", Arial, sans-serif;
+    --font-serif:   "Playfair Display", "Times New Roman", serif; /* manchete jornal */
+
+    /* ESCALA */
+    --r-sm:  6px;
+    --r-md:  10px;
+    --r-lg:  16px;
+    --r-xl:  24px;
+
+    /* Sombras discretas — visual plano, sem profundidade 3D */
+    --shadow-sm: 0 1px 2px rgba(21, 24, 31, 0.05);
+    --shadow-md: 0 2px 8px rgba(21, 24, 31, 0.07);
+    --shadow-lg: 0 6px 20px rgba(21, 24, 31, 0.09);
+}
+
+/* Fontes via CDN do Google Fonts (Montserrat + Playfair) */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;900&display=swap");
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--gesp-blue); text-decoration: none; }
+a:hover { color: var(--gesp-blue-dark); }
+
+button {
+    font-family: var(--font-body);
+    cursor: pointer;
+}

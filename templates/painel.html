@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Painel Gerencial · SEDUC{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div>
+        <span class="badge">BI · Execução Orçamentária</span>
+        <h1>Painel Gerencial</h1>
+        <p>Filtros dinâmicos, indicadores e relatório de execução por Órgão e Assunto.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <button class="btn btn--ghost" id="btn-reset">Limpar filtros</button>
+        <button class="btn btn--primary" id="btn-aplicar">Aplicar filtros</button>
+    </div>
+</section>
+
+<section class="filters">
+    <div class="filters-header">
+        <h3>Filtros</h3>
+        <small id="filtro-resumo" style="color:var(--color-text-mute)"></small>
+    </div>
+    <div class="filters-grid">
+        <div class="field"><label>Unidade Orçamentária</label>
+            <select id="f-uo"><option value="">Todas</option></select></div>
+        <div class="field"><label>Programa</label>
+            <select id="f-programa"><option value="">Todos</option></select></div>
+        <div class="field"><label>Ação</label>
+            <select id="f-acao"><option value="">Todas</option></select></div>
+        <div class="field"><label>Grupo de Despesa</label>
+            <select id="f-grupo"><option value="">Todos</option></select></div>
+        <div class="field"><label>Elemento</label>
+            <select id="f-elemento"><option value="">Todos</option></select></div>
+        <div class="field"><label>Fonte de Recursos</label>
+            <select id="f-fonte"><option value="">Todas</option></select></div>
+        <div class="field"><label>Status</label>
+            <select id="f-status"><option value="">Todos</option></select></div>
+        <div class="field"><label>Assunto contém</label>
+            <input type="text" id="f-assunto" placeholder="ex.: transporte" /></div>
+        <div class="field"><label>De</label>
+            <input type="date" id="f-de" /></div>
+        <div class="field"><label>Até</label>
+            <input type="date" id="f-ate" /></div>
+    </div>
+</section>
+
+<section class="kpi-grid">
+    <div class="kpi kpi--green">
+        <div class="kpi__label">Suplementação Filtrada</div>
+        <div class="kpi__value" id="kpi-sup">—</div>
+        <div class="kpi__sub" id="kpi-sup-sub"></div>
+    </div>
+    <div class="kpi kpi--red">
+        <div class="kpi__label">Redução Filtrada</div>
+        <div class="kpi__value" id="kpi-red">—</div>
+        <div class="kpi__sub" id="kpi-red-sub"></div>
+    </div>
+    <div class="kpi kpi--yellow">
+        <div class="kpi__label">Saldo Líquido</div>
+        <div class="kpi__value" id="kpi-saldo">—</div>
+        <div class="kpi__sub">Sup. − Red.</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__label">Expedientes</div>
+        <div class="kpi__value" id="kpi-total">—</div>
+        <div class="kpi__sub" id="kpi-status"></div>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Tendência Mensal · Suplementação vs Redução</h3>
+        <div class="canvas-wrap"><canvas id="chart-tendencia"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Grupo de Despesa</h3>
+        <div class="canvas-wrap"><canvas id="chart-grupo"></canvas></div>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Distribuição por Unidade Orçamentária</h3>
+        <div class="canvas-wrap"><canvas id="chart-uo"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Funil de Status</h3>
+        <div class="canvas-wrap"><canvas id="chart-status"></canvas></div>
+    </div>
+</section>
+
+<section class="table-card">
+    <div class="table-toolbar">
+        <h3>Relatório de Execução Orçamentária</h3>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn--ghost" id="btn-csv">Exportar CSV</button>
+            <button class="btn btn--yellow" id="btn-pdf">Exportar PDF</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="execucao-table">
+            <thead>
+                <tr>
+                    <th>UO</th>
+                    <th>Assunto</th>
+                    <th>Grupo</th>
+                    <th class="num">Dotação</th>
+                    <th class="num">Reservado</th>
+                    <th class="num">Empenhado</th>
+                    <th class="num">Liquidado</th>
+                    <th class="num">A Liquidar</th>
+                    <th class="num">A Empenhar</th>
+                    <th>Situação</th>
+                </tr>
+            </thead>
+            <tbody id="execucao-body">
+                <tr><td colspan="10" class="empty">Carregando…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin:10px 4px 0; font-size:12px; color:var(--color-text-mute);">
+        Linhas em vermelho indicam <strong>déficit orçamentário</strong>
+        (Valor a Empenhar &lt; 0).
+    </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/painel.js"></script>
+{% endblock %}

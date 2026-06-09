@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Sistema operacional / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Observação: o banco data/orcamento.db É versionado de propósito,
+# para o site já subir com os dados atuais carregados. Se preferir
+# subir vazio, descomente a linha abaixo:
+# data/orcamento.db

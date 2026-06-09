@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block title %}Inteligência Orçamentária · SEDUC{% endblock %}
+
+{% block head %}
+<style>
+    /* Painel de insights — cartões coloridos por severidade */
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+    @media (max-width: 900px) { .insights-grid { grid-template-columns: 1fr; } }
+    .insight-card {
+        background: var(--color-surface);
+        border-radius: var(--r-lg);
+        padding: 16px 18px;
+        box-shadow: var(--shadow-sm);
+        border-left: 5px solid var(--gray-400);
+    }
+    .insight-card.critico { border-left-color: var(--gesp-red); background: rgba(255,22,31,0.05); }
+    .insight-card.alerta  { border-left-color: var(--gesp-yellow); background: rgba(251,185,0,0.07); }
+    .insight-card.info    { border-left-color: var(--gesp-blue); }
+    .insight-card.ok      { border-left-color: var(--gesp-green); }
+    .insight-card__head {
+        display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .insight-card__sev {
+        font-size: 10px; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 0.8px; padding: 2px 8px; border-radius: 999px;
+        background: var(--gray-100); color: var(--gray-700);
+    }
+    .insight-card.critico .insight-card__sev { background: rgba(255,22,31,0.15); color: var(--gesp-red); }
+    .insight-card.alerta  .insight-card__sev { background: rgba(251,185,0,0.20); color: #92400e; }
+    .insight-card.info    .insight-card__sev { background: rgba(3,78,162,0.12); color: var(--gesp-blue); }
+    .insight-card.ok      .insight-card__sev { background: rgba(11,146,71,0.14); color: var(--gesp-green); }
+    .insight-card__titulo {
+        font-family: var(--font-display); font-weight: 800; font-size: 14px;
+        color: var(--gray-900);
+    }
+    .insight-card__texto { font-size: 13px; line-height: 1.5; color: var(--color-text); }
+
+    /* Simulador */
+    .sim-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px; align-items: end; margin-bottom: 14px;
+    }
+    @media (max-width: 980px) { .sim-grid { grid-template-columns: repeat(2, 1fr); } }
+    .sim-out {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+        margin: 12px 0;
+    }
+    @media (max-width: 980px) { .sim-out { grid-template-columns: 1fr; } }
+    .sim-box {
+        background: var(--gray-50); border-radius: var(--r-sm);
+        padding: 14px 16px; border-left: 4px solid var(--gray-400);
+    }
+    .sim-box.ok  { border-left-color: var(--gesp-green); }
+    .sim-box.bad { border-left-color: var(--gesp-red); }
+    .sim-box .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+        color: var(--color-text-mute); font-weight: 700; }
+    .sim-box .val { font-family: var(--font-display); font-size: 22px; font-weight: 800;
+        color: var(--gray-900); margin-top: 4px; }
+    .sim-veredito {
+        padding: 12px 16px; border-radius: var(--r-sm); font-size: 13.5px;
+        line-height: 1.5; background: var(--gray-50);
+        border-left: 4px solid var(--gesp-blue); margin-top: 8px;
+    }
+    .sim-veredito.ok  { border-left-color: var(--gesp-green); background: rgba(11,146,71,0.06); }
+    .sim-veredito.bad { border-left-color: var(--gesp-red); background: rgba(255,22,31,0.05); }
+
+    .pill.crit { background: var(--gesp-red); color: var(--gesp-white); }
+    .pill.def  { background: #7a0010; color: var(--gesp-white); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div>
+        <span class="badge">Inteligência · Radar de Risco</span>
+        <h1>Inteligência Orçamentária — Radar de Pressões &amp; Déficits</h1>
+        <p>Análise preditiva de risco para antecipar pressões e déficits frente a despesas
+           novas não previstas na LOA ou dotação inicial insuficiente.
+           Ref.: 08/06/2026 · {{ '' }}ritmo esperado 50% (6 meses).</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn--ghost" id="btn-reset-intel">Limpar filtros</button>
+        <button class="btn btn--primary" id="btn-aplicar-intel">Aplicar filtros</button>
+    </div>
+</section>
+
+<!-- ── Filtros ─────────────────────────────────────────────────────── -->
+<section class="filters">
+    <div class="filters-header">
+        <h3>Filtros</h3>
+        <small id="intel-filtro-resumo" style="color:var(--color-text-mute)"></small>
+    </div>
+    <div class="filters-grid">
+        <div class="field"><label>Unidade Orçamentária</label>
+            <select id="if-uo"><option value="">Todas</option></select></div>
+        <div class="field"><label>Programa</label>
+            <select id="if-programa"><option value="">Todos</option></select></div>
+        <div class="field"><label>Ação</label>
+            <select id="if-acao"><option value="">Todas</option></select></div>
+        <div class="field"><label>Grupo de Despesa</label>
+            <select id="if-grupo"><option value="">Todos</option></select></div>
+        <div class="field"><label>Elemento</label>
+            <select id="if-elemento"><option value="">Todos</option></select></div>
+        <div class="field"><label>Fonte de Recursos</label>
+            <select id="if-fonte"><option value="">Todas</option></select></div>
+        <div class="field"><label>Classificação</label>
+            <select id="if-classificacao"><option value="">Todas</option></select></div>
+        <div class="field"><label>Assunto contém</label>
+            <input type="text" id="if-assunto" placeholder="ex.: uniforme" /></div>
+    </div>
+</section>
+
+<!-- ── KPIs de Risco ──────────────────────────────────────────────── -->
+<section class="kpi-grid">
+    <div class="kpi kpi--blue">
+        <div class="kpi__label">Taxa de Execução</div>
+        <div class="kpi__value" id="ikpi-taxa">—</div>
+        <div class="kpi__sub" id="ikpi-gap">—</div>
+    </div>
+    <div class="kpi kpi--red">
+        <div class="kpi__label">Déficit Total Instalado</div>
+        <div class="kpi__value" id="ikpi-deficit">—</div>
+        <div class="kpi__sub">Σ A Empenhar &lt; 0</div>
+    </div>
+    <div class="kpi kpi--red">
+        <div class="kpi__label">Linhas em Déficit</div>
+        <div class="kpi__value" id="ikpi-ndef">—</div>
+        <div class="kpi__sub">A Empenhar negativo</div>
+    </div>
+    <div class="kpi kpi--yellow">
+        <div class="kpi__label">Linhas em Risco</div>
+        <div class="kpi__value" id="ikpi-nrisco">—</div>
+        <div class="kpi__sub">Esgotam até dezembro</div>
+    </div>
+    <div class="kpi kpi--green">
+        <div class="kpi__label">Folga Remanejável</div>
+        <div class="kpi__value" id="ikpi-folga">—</div>
+        <div class="kpi__sub" id="ikpi-nfolga">— linhas subexecutadas</div>
+    </div>
+    <div class="kpi kpi--blue">
+        <div class="kpi__label">Saldo de Créditos</div>
+        <div class="kpi__value" id="ikpi-creditos">—</div>
+        <div class="kpi__sub">Suplementação − Redução</div>
+    </div>
+</section>
+
+<!-- ── Painel de Insights ─────────────────────────────────────────── -->
+<section style="margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+    <h3 style="margin:0;font-family:var(--font-display);font-size:14px;font-weight:800;
+        color:var(--gray-900);text-transform:uppercase;letter-spacing:1.4px;
+        border-bottom:3px solid var(--gesp-red);padding-bottom:6px;">Painel de Insights</h3>
+</section>
+<div class="insights-grid" id="insights-cards">
+    <div class="insight-card"><div class="insight-card__texto">Carregando análise…</div></div>
+</div>
+
+<!-- ── Gráficos ───────────────────────────────────────────────────── -->
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Ritmo de Execução por Dimensão (gap vs. esperado)</h3>
+        <div style="margin:-4px 0 10px;">
+            <select id="intel-dim" class="btn btn--ghost btn--sm" style="padding:5px 10px;">
+                <option value="uo">Por UO</option>
+                <option value="grupo">Por Grupo</option>
+                <option value="fonte">Por Fonte</option>
+                <option value="classificacao">Por Classificação</option>
+                <option value="programa">Por Programa</option>
+            </select>
+        </div>
+        <div class="canvas-wrap"><canvas id="intel-chart-ritmo"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Folga × Pressão (bolhas)</h3>
+        <div class="canvas-wrap"><canvas id="intel-chart-quadrante"></canvas></div>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="chart-card big">
+        <h3>Meses até Esgotar o Saldo (linhas em risco)</h3>
+        <div class="canvas-wrap"><canvas id="intel-chart-esgotamento"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Créditos por Grupo — Supl. vs. Redução</h3>
+        <div class="canvas-wrap"><canvas id="intel-chart-creditos"></canvas></div>
+    </div>
+</section>
+
+<!-- ── Simulador de Pressão ───────────────────────────────────────── -->
+<section class="table-card" style="margin-bottom:24px;">
+    <div class="table-toolbar">
+        <h3>Simulador de Pressão — Despesa Nova × Folga Remanejável</h3>
+    </div>
+    <p style="margin:0 0 12px;font-size:13px;color:var(--color-text-mute);">
+        Informe uma despesa nova não prevista e restrinja o escopo. O simulador verifica
+        quanto da folga remanejável (linhas subexecutadas) a cobre e o que exige nova fonte.
+    </p>
+    <div class="sim-grid">
+        <div class="field"><label>Valor da despesa nova (R$)</label>
+            <input type="number" id="sim-valor" min="0" step="1000" placeholder="ex.: 5000000" /></div>
+        <div class="field"><label>Grupo (escopo)</label>
+            <select id="sim-grupo"><option value="">Todos</option></select></div>
+        <div class="field"><label>Fonte (escopo)</label>
+            <select id="sim-fonte"><option value="">Todas</option></select></div>
+        <div class="field"><label>UO (escopo)</label>
+            <select id="sim-uo"><option value="">Todas</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+        <button class="btn btn--primary" id="btn-simular">Simular pressão</button>
+        <button class="btn btn--ghost" id="btn-sim-limpar">Limpar</button>
+    </div>
+    <div id="sim-resultado" style="display:none;">
+        <div class="sim-out">
+            <div class="sim-box" id="sim-box-folga">
+                <div class="lbl">Folga disponível no escopo</div>
+                <div class="val" id="sim-folga">—</div>
+            </div>
+            <div class="sim-box" id="sim-box-cob">
+                <div class="lbl">Cobertura por remanejamento</div>
+                <div class="val" id="sim-cobertura">—</div>
+            </div>
+            <div class="sim-box" id="sim-box-gap">
+                <div class="lbl">Gap descoberto (nova fonte)</div>
+                <div class="val" id="sim-gap">—</div>
+            </div>
+        </div>
+        <div class="sim-veredito" id="sim-veredito"></div>
+        <div class="table-wrap" style="margin-top:12px;max-height:300px;">
+            <table class="execucao-table">
+                <thead>
+                    <tr><th>UO</th><th>Assunto / Despesa</th><th>Grupo</th>
+                        <th class="num">Folga disponível</th><th class="num">A remanejar</th></tr>
+                </thead>
+                <tbody id="sim-tbody">
+                    <tr><td colspan="5" class="empty">Sem candidatas.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ── Tabela de Risco de Esgotamento ─────────────────────────────── -->
+<section class="table-card">
+    <div class="table-toolbar">
+        <h3>Linhas em Risco de Esgotamento</h3>
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn--ghost" id="btn-intel-csv">Exportar CSV</button>
+            <button class="btn btn--yellow" id="btn-intel-pdf">Exportar PDF</button>
+        </div>
+    </div>
+
+    <div class="exec-legend" style="margin:6px 0 6px;display:flex;gap:12px;font-size:12px;flex-wrap:wrap;">
+        <span><span class="legend-dot" style="background:#7a0010"></span> Déficit (A Empenhar &lt; 0)</span>
+        <span><span class="legend-dot" style="background:var(--gesp-red)"></span> Crítico (esgota até set.)</span>
+        <span><span class="legend-dot" style="background:var(--gesp-yellow)"></span> Atenção (esgota no ano)</span>
+    </div>
+
+    <div class="table-wrap">
+        <table class="execucao-table" id="intel-table">
+            <thead>
+                <tr>
+                    <th>UO</th>
+                    <th>Assunto / Despesa</th>
+                    <th>Grupo</th>
+                    <th class="num">Dotação</th>
+                    <th class="num">Empenhado</th>
+                    <th class="num">A Empenhar</th>
+                    <th class="num">Ritmo Mensal</th>
+                    <th class="num">Mês Esgotamento</th>
+                    <th>Risco</th>
+                </tr>
+            </thead>
+            <tbody id="intel-tbody">
+                <tr><td colspan="9" class="empty">Carregando…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin:10px 4px 0; font-size:12px; color:var(--color-text-mute);">
+        Mês de esgotamento = meses decorridos + (A Empenhar ÷ ritmo mensal de empenho).
+        Linhas <strong>DEFICIT/CRITICO</strong> destacadas em vermelho.
+    </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/inteligencia.js"></script>
+{% endblock %}

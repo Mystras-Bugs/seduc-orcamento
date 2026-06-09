@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Jornal do Dia · SEDUC{% endblock %}
+
+{% block content %}
+<section class="diario-masthead">
+    <div class="diario-masthead__row">
+        <span class="diario-masthead__edicao">SEDUC · Edição de <span id="edicao-data">--</span></span>
+        <button class="btn btn--primary" id="btn-pdf-jornal">Exportar Jornal em PDF</button>
+    </div>
+    <h1 class="diario-masthead__title">O Diário do Orçamento</h1>
+    <p class="diario-masthead__sub">Boletim editorial da Secretaria da Educação do Estado de São Paulo</p>
+</section>
+
+<figure class="diario-hero">
+    <img src="/static/img/headline.png" alt="Sede da Secretaria da Educação do Estado de São Paulo" />
+    <figcaption>Palácio da Educação · Sede histórica da SEDUC em São Paulo</figcaption>
+</figure>
+
+<section class="kpi-grid">
+    <div class="kpi kpi--green">
+        <div class="kpi__label">Suplementado (período)</div>
+        <div class="kpi__value" id="kpi-sup">—</div>
+        <div class="kpi__sub" id="kpi-sup-sub">&nbsp;</div>
+    </div>
+    <div class="kpi kpi--red">
+        <div class="kpi__label">Reduzido (período)</div>
+        <div class="kpi__value" id="kpi-red">—</div>
+        <div class="kpi__sub" id="kpi-red-sub">&nbsp;</div>
+    </div>
+    <div class="kpi kpi--yellow">
+        <div class="kpi__label">Saldo Líquido</div>
+        <div class="kpi__value" id="kpi-saldo">—</div>
+        <div class="kpi__sub">Suplementações – Reduções</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi__label">Expedientes</div>
+        <div class="kpi__value" id="kpi-total">—</div>
+        <div class="kpi__sub" id="kpi-status">&nbsp;</div>
+    </div>
+</section>
+
+<section class="jornal-grid">
+    <article class="manchete" id="manchete">
+        <div class="empty">Carregando manchete…</div>
+    </article>
+
+    <aside>
+        <div class="curtas-card">
+            <h3>Curtas do Orçamento</h3>
+            <ul class="timeline" id="timeline">
+                <li><div class="data">--</div><div class="corpo">Carregando…</div></li>
+            </ul>
+        </div>
+        <div class="alertas">
+            <h3>Radar de Déficits</h3>
+            <div id="alertas-box">
+                <div class="empty">Verificando linhas com déficit…</div>
+            </div>
+        </div>
+    </aside>
+</section>
+
+<!-- ── Resumo de Déficits — Custeio (33) e Capital (44) ─────────────── -->
+<section class="deficit-resumo">
+    <div class="table-toolbar" style="align-items:flex-end;">
+        <div>
+            <h3>Resumo de Déficits — Custeio e Capital</h3>
+            <p style="margin:4px 0 0;font-size:12.5px;color:var(--color-text-mute);">
+                Principais temas em déficit (A Empenhar &lt; 0) nos grupos
+                <strong>33 (Custeio)</strong> e <strong>44 (Capital)</strong>.
+                <strong>Folha de pessoal (grupo 31) excluída.</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="kpi-grid" style="margin:14px 0 18px;">
+        <div class="kpi kpi--red">
+            <div class="kpi__label">Déficit Total 33+44</div>
+            <div class="kpi__value" id="rd-total">—</div>
+            <div class="kpi__sub">A Empenhar negativo</div>
+        </div>
+        <div class="kpi kpi--red">
+            <div class="kpi__label">Déficit Custeio (33)</div>
+            <div class="kpi__value" id="rd-custeio">—</div>
+            <div class="kpi__sub">Grupo 33</div>
+        </div>
+        <div class="kpi kpi--red">
+            <div class="kpi__label">Déficit Capital (44)</div>
+            <div class="kpi__value" id="rd-capital">—</div>
+            <div class="kpi__sub">Grupo 44</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi__label">Nº de Temas em Déficit</div>
+            <div class="kpi__value" id="rd-ntemas">—</div>
+            <div class="kpi__sub">Linhas 33/44 negativas</div>
+        </div>
+    </div>
+
+    <div class="table-card" style="padding:0;overflow:hidden;">
+        <div class="table-wrap" style="max-height:none;border:none;">
+            <table class="execucao-table">
+                <thead>
+                    <tr>
+                        <th>UGE</th>
+                        <th>Assunto / Despesa</th>
+                        <th style="text-align:center">Grupo</th>
+                        <th class="num">Déficit (R$)</th>
+                    </tr>
+                </thead>
+                <tbody id="rd-tbody">
+                    <tr><td colspan="4" class="empty">Verificando déficits de custeio e capital…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/jornal.js"></script>
+{% endblock %}

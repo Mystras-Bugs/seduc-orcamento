@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}SEDUC - Monitoramento Orcamentario{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/identity.css" />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="gesp-bar">
+        <div class="gesp-bar__brand">
+            <div class="gesp-logo">
+                <div class="gesp-logo__mark">SP</div>
+                <div class="gesp-logo__text">
+                    <div class="lt-1">São Paulo</div>
+                    <div class="lt-2">Governo do Estado</div>
+                </div>
+            </div>
+        </div>
+        <div class="gesp-bar__sec">
+            <div class="s1">Secretaria da</div>
+            <div class="s2">Educação</div>
+        </div>
+        <nav class="gesp-bar__nav">
+            <a href="/"         class="{% if page == 'jornal' %}is-active{% endif %}">Jornal do Dia</a>
+            <a href="/painel"   class="{% if page == 'painel' %}is-active{% endif %}">Painel Gerencial</a>
+            <a href="/execucao" class="{% if page == 'execucao' %}is-active{% endif %}">Execução Orçamentária</a>
+            <a href="/pressao" class="{% if page == 'pressao' %}is-active{% endif %}">Pressão Orçamentária</a>
+            <a href="/inteligencia" class="{% if page == 'inteligencia' %}is-active{% endif %}">Inteligência</a>
+            <a href="/admin"    class="{% if page == 'admin' %}is-active{% endif %}">Importar Dados</a>
+        </nav>
+    </header>
+    <div class="gesp-stripe" aria-hidden="true"></div>
+
+    <main class="page">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <strong>SEDUC · Monitoramento Orçamentário</strong> ·
+        Padrão visual conforme Manual de Identidade Visual GESP v1.12.
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="/static/js/common.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
