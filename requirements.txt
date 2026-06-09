@@ -1,0 +1,9 @@
+# Dependências na raiz para o comando padrão do Render
+# (pip install -r requirements.txt). Mantém o backend/requirements.txt
+# como fonte e evita o erro "No such file or directory".
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+jinja2==3.1.4
+python-multipart==0.0.12
+openpyxl==3.1.5
+reportlab==4.2.5
